@@ -1,15 +1,11 @@
-# S3
 terraform {
   backend "s3" {
-    bucket = "light-ops-terraform-state-242" 
+    bucket = "flight-ops-terraform-state-242"
+    key    = "state/terraform.tfstate"
     region = "eu-west-3"
   }
 }
 
-# The rest of your provider and resources stay the same...
-provider "aws" {
-  region = "eu-west-3"
-}
 provider "aws" {
   region = "eu-west-3"
 }
@@ -30,12 +26,11 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# SECURITY GROUP
+#  SECURITY GROUP
 resource "aws_security_group" "ops_sg" {
   name        = "flight_ops_sg"
   description = "Inbound traffic for Flight Ops POC"
 
-  
   ingress {
     from_port   = 22
     to_port     = 22
@@ -43,7 +38,6 @@ resource "aws_security_group" "ops_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Flask 
   ingress {
     from_port   = 5000
     to_port     = 5000
@@ -51,7 +45,6 @@ resource "aws_security_group" "ops_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Prometheus 
   ingress {
     from_port   = 9090
     to_port     = 9090
@@ -59,7 +52,6 @@ resource "aws_security_group" "ops_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # grafana
   ingress {
     from_port   = 3000
     to_port     = 3000
@@ -67,7 +59,6 @@ resource "aws_security_group" "ops_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Allow all
   egress {
     from_port   = 0
     to_port     = 0
@@ -76,7 +67,7 @@ resource "aws_security_group" "ops_sg" {
   }
 }
 
-# SSH KEY: 
+# SSH 
 resource "aws_key_pair" "ops_auth" {
   key_name   = "ops-key"
   public_key = var.public_key
