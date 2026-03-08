@@ -1,4 +1,15 @@
-# 1. THE PROVIDER
+# S3
+terraform {
+  backend "s3" {
+    bucket = "light-ops-terraform-state-242" 
+    region = "eu-west-3"
+  }
+}
+
+# The rest of your provider and resources stay the same...
+provider "aws" {
+  region = "eu-west-3"
+}
 provider "aws" {
   region = "eu-west-3"
 }
