@@ -1,0 +1,50 @@
+---
+- name: Configure Amadeus POC Server
+  hosts: amadeus_servers
+  become: yes # SRE Translation: "Run all these commands as 'sudo' (root user)"
+
+  tasks:
+    - name: 1. Update the apt package cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: 2. Install prerequisite packages for Docker
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+        state: present
+
+    - name: 3. Add Docker's official GPG security key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: 4. Add the official Docker App Store (Repository)
+      apt_repository:
+        repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu jammy stable
+        state: present
+
+    - name: 5. Install Docker Engine and the modern Docker Compose plugin
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: latest
+
+    - name: 6. Start the Docker Engine and enable it on server boot
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: 7. Add 'ubuntu' user to the 'docker' group
+      user:
+        name: ubuntu
+        groups: docker
+        append: yes

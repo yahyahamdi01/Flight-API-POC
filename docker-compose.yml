@@ -1,0 +1,18 @@
+services :
+
+  redis-service:
+    image: redis:8-alpine
+    container_name: redis-service
+    ports:
+      - "6379:6379"
+  
+  flight-api:
+    image: flight-api:v1
+    container_name: flight-app
+    ports:
+      - "5000:5000"
+      - "8000:8000"
+    environment:
+      - REDIS_HOST=redis-service
+    depends_on:
+      - redis-service

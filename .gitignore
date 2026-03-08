@@ -1,0 +1,15 @@
+# Python ignores
+venv/
+__pycache__/
+*.pyc
+
+# Terraform ignores (CRITICAL SECURITY)
+infrastructure/.terraform/
+infrastructure/terraform.tfstate
+infrastructure/terraform.tfstate.backup
+infrastructure/.terraform.lock.hcl
+
+# OS ignores
+.DS_Store
+aws/
+awscliv2.zip
