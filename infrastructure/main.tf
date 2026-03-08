@@ -6,6 +6,7 @@ terraform {
   }
 }
 
+
 provider "aws" {
   region = "eu-west-3"
 }
@@ -26,11 +27,12 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-#  SECURITY GROUP
+# SECURITY GROUP
 resource "aws_security_group" "ops_sg" {
   name        = "flight_ops_sg"
   description = "Inbound traffic for Flight Ops POC"
 
+  # SSH
   ingress {
     from_port   = 22
     to_port     = 22
@@ -38,6 +40,7 @@ resource "aws_security_group" "ops_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # API Port
   ingress {
     from_port   = 5000
     to_port     = 5000
@@ -45,6 +48,15 @@ resource "aws_security_group" "ops_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # METRICS PORT
+  ingress {
+    from_port   = 8000
+    to_port     = 8000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Prometheus
   ingress {
     from_port   = 9090
     to_port     = 9090
@@ -52,6 +64,7 @@ resource "aws_security_group" "ops_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # Grafana
   ingress {
     from_port   = 3000
     to_port     = 3000
@@ -67,13 +80,13 @@ resource "aws_security_group" "ops_sg" {
   }
 }
 
-# SSH 
+#  SSH KEY
 resource "aws_key_pair" "ops_auth" {
   key_name   = "ops-key"
   public_key = var.public_key
 }
 
-# EC2
+# EC2 
 resource "aws_instance" "ops_server" {
   ami                    = data.aws_ami.ubuntu.id
   instance_type          = "t3.micro"
@@ -84,7 +97,6 @@ resource "aws_instance" "ops_server" {
     Name = "Flight-Ops-Server"
   }
 }
-
 
 output "server_public_ip" {
   value = aws_instance.ops_server.public_ip

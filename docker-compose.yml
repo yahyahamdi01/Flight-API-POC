@@ -4,12 +4,12 @@ services:
   flask-app:
     build: .
     ports:
-      - "5000:5000"
-      - "8000:8000"
-    depends_on:
-      - redis
+      - "5000:5000" # API
+      - "8000:8000" # Metrics
     environment:
       - REDIS_HOST=redis
+    depends_on:
+      - redis
 
   redis:
     image: "redis:alpine"
