@@ -1,13 +1,17 @@
-# 1. THE PROVIDER: Tells Terraform we are using AWS and the Paris region
+# 1. THE PROVIDER
 provider "aws" {
   region = "eu-west-3"
 }
 
-# 2. THE DATA BLOCK: A Pro-SRE move. Instead of hardcoding an OS version,
-# we tell Terraform to dynamically search AWS for the absolute latest Ubuntu 22.04 image.
+variable "public_key" {
+  type        = string
+  description = "Public key for the EC2 instance"
+}
+
+# latest Ubuntu
 data "aws_ami" "ubuntu" {
   most_recent = true
-  owners      = ["099720109477"] # Canonical's official AWS account ID
+  owners      = ["099720109477"]
 
   filter {
     name   = "name"
@@ -15,13 +19,12 @@ data "aws_ami" "ubuntu" {
   }
 }
 
-# 3. THE SECURITY GROUP: This is our Firewall. 
-# We start with a "Deny All" approach and only open what we explicitly need.
-resource "aws_security_group" "amadeus_sg" {
-  name        = "amadeus_flight_sg"
-  description = "Allow inbound traffic for Amadeus POC"
+# SECURITY GROUP
+resource "aws_security_group" "ops_sg" {
+  name        = "flight_ops_sg"
+  description = "Inbound traffic for Flight Ops POC"
 
-  # Open Port 22 so we can SSH into the server later
+  
   ingress {
     from_port   = 22
     to_port     = 22
@@ -29,7 +32,7 @@ resource "aws_security_group" "amadeus_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Open Port 5000 for our Flight App
+  # Flask 
   ingress {
     from_port   = 5000
     to_port     = 5000
@@ -37,44 +40,50 @@ resource "aws_security_group" "amadeus_sg" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Open Port 8000 for our Prometheus Metrics
+  # Prometheus 
   ingress {
-    from_port   = 8000
-    to_port     = 8000
+    from_port   = 9090
+    to_port     = 9090
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  # Allow the server to access the internet (to download Docker later)
+  # grafana
+  ingress {
+    from_port   = 3000
+    to_port     = 3000
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  # Allow all
   egress {
     from_port   = 0
     to_port     = 0
-    protocol    = "-1" # "-1" means all protocols
+    protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
 }
 
-# THE SSH KEY: Uploads our public key to AWS so we can log in
-resource "aws_key_pair" "amadeus_auth" {
-  key_name   = "amadeus-key"
-  public_key = file("~/.ssh/amadeus_key.pub")
+# SSH KEY: 
+resource "aws_key_pair" "ops_auth" {
+  key_name   = "ops-key"
+  public_key = var.public_key
 }
 
-# 4. THE EC2 INSTANCE: The actual Virtual Server
-resource "aws_instance" "amadeus_server" {
+# EC2
+resource "aws_instance" "ops_server" {
   ami                    = data.aws_ami.ubuntu.id
-  instance_type          = "t3.micro" # 100% Free Tier Eligible!
-  vpc_security_group_ids = [aws_security_group.amadeus_sg.id]
-  
-  key_name               = aws_key_pair.amadeus_auth.key_name
+  instance_type          = "t3.micro"
+  vpc_security_group_ids = [aws_security_group.ops_sg.id]
+  key_name               = aws_key_pair.ops_auth.key_name
 
   tags = {
-    Name = "Amadeus-POC-Server"
+    Name = "Flight-Ops-Server"
   }
 }
 
-# 5. THE OUTPUT: Tells Terraform to print the public IP address 
-# to our terminal when it finishes, so we know where to connect!
+
 output "server_public_ip" {
-  value = aws_instance.amadeus_server.public_ip
+  value = aws_instance.ops_server.public_ip
 }

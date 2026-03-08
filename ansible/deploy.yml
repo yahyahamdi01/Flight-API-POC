@@ -1,30 +1,26 @@
 ---
-- name: Deploy Amadeus Flight API to AWS
-  hosts: amadeus_servers
-  become: no # We don't need sudo anymore because we added 'ubuntu' to the docker group!
+- name: Deploy Flight Ops API
+  hosts: all
+  become: no
 
   tasks:
-    - name: 1. Create an application folder on the server
+    - name: Create app folder
       file:
-        path: /home/ubuntu/amadeus-app
+        path: /home/ubuntu/flight-ops-app
         state: directory
 
-    - name: 2. Securely copy our code from the laptop to AWS
+    - name: Copy code
       copy:
-        src: ../{{ item }} # Tells Ansible to look one folder up (in amadeus-poc)
-        dest: /home/ubuntu/amadeus-app/
+        src: ../{{ item }}
+        dest: /home/ubuntu/flight-ops-app/
       loop:
         - app.py
         - requirements.txt
         - Dockerfile
         - docker-compose.yml
+        - prometheus.yml
 
-    - name: 3. Build the Docker Image physically on the AWS server
-      command: docker build -t flight-api:v1 .
+    - name: Build and Launch
+      command: docker compose up -d --build
       args:
-        chdir: /home/ubuntu/amadeus-app # Tells Ansible to run the command inside this folder
-
-    - name: 4. Launch the Microservices via Docker Compose
-      command: docker compose up -d
-      args:
-        chdir: /home/ubuntu/amadeus-app
+        chdir: /home/ubuntu/flight-ops-app
