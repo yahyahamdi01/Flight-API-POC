@@ -1,18 +1,23 @@
 ---
 - name: Deploy Flight Ops API
   hosts: all
-  become: no
+  
+  become: yes 
 
   tasks:
     - name: Create app folder
       file:
         path: /home/ubuntu/flight-ops-app
         state: directory
+        owner: ubuntu
+        group: ubuntu
 
     - name: Copy code
       copy:
         src: ../{{ item }}
         dest: /home/ubuntu/flight-ops-app/
+        owner: ubuntu
+        group: ubuntu
       loop:
         - app.py
         - requirements.txt
@@ -21,6 +26,7 @@
         - prometheus.yml
 
     - name: Build and Launch
+      
       command: docker compose up -d --build
       args:
         chdir: /home/ubuntu/flight-ops-app
