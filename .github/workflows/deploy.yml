@@ -25,19 +25,22 @@ jobs:
         run: |
           cd infrastructure
           terraform init
-          terraform apply -auto-approve -var="public_key=${{ secrets.SSH_PUBLIC_KEY }}"
+        
+          terraform apply -auto-approve -lock=false -var="public_key=${{ secrets.SSH_PUBLIC_KEY }}"
           echo "SERVER_IP=$(terraform output -raw server_public_ip)" >> $GITHUB_ENV
 
       - name: Setup SSH Key
         run: |
           mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/amadeus_key
-          chmod 600 ~/.ssh/amadeus_key
+          
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/ops_key
+          chmod 600 ~/.ssh/ops_key
 
       - name: Install Ansible
         run: sudo apt-get update && sudo apt-get install -y ansible
 
       - name: Run Ansible Playbooks
         run: |
-          ansible-playbook -i "${{ env.SERVER_IP }}," -u ubuntu --private-key ~/.ssh/amadeus_key ansible/setup.yml --ssh-common-args='-o StrictHostKeyChecking=no'
-          ansible-playbook -i "${{ env.SERVER_IP }}," -u ubuntu --private-key ~/.ssh/amadeus_key ansible/deploy.yml --ssh-common-args='-o StrictHostKeyChecking=no'
+          
+          ansible-playbook -i "${{ env.SERVER_IP }}," -u ubuntu --private-key ~/.ssh/ops_key ansible/setup.yml --ssh-common-args='-o StrictHostKeyChecking=no'
+          ansible-playbook -i "${{ env.SERVER_IP }}," -u ubuntu --private-key ~/.ssh/ops_key ansible/deploy.yml --ssh-common-args='-o StrictHostKeyChecking=no'
